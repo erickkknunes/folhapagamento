@@ -1,9 +1,9 @@
-package com.calculadora.controller;
+package com.calculadora.father.demo.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.calculadora.entities.*;
-import com.calculadora.repositories.*;
+import com.calculadora.father.demo.models.*;
+import com.calculadora.father.demo.repositories.*;
 
 @RestController
 @RequestMapping("/api")

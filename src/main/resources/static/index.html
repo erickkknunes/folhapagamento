@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -27,12 +28,19 @@
         <button type="submit">Calcular</button>
     </form>
 
+
     <div id="result"></div>
+
+    <button onclick="window.location.href='/inforemuneracao.html'">Página de Informações de Remuneração</button>
+    <button onclick="window.location.href='/funcionario.html'">Página do Funcionário</button>
+    <button onclick="window.location.href='/empregador.html'">Página do Empregador</button>
+    <button onclick="window.location.href='/selecionarEmpregador.html'">Selecionar Empregador</button>
 
     <script>
         document.getElementById('calculatorForm').addEventListener('submit', function (event) {
             event.preventDefault();
             const form = event.target;
+
 
             const formData = new FormData(form);
             const requestBody = {
@@ -40,6 +48,7 @@
                 operator: formData.get('operator'),
                 secondNumber: parseFloat(formData.get('secondNumber'))
             };
+
 
             fetch('/api/calculate', {
                 method: 'POST',
@@ -51,6 +60,7 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('result').innerText = `Resultado: ${data.result}`;
+                    window.alert("opa");
                 })
                 .catch(error => {
                     console.error('Erro:', error);

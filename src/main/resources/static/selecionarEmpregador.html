@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecionar Empregador e Funcionário</title>
+</head>
+
+<body>
+    <h1>Selecionar Empregador e Funcionário</h1>
+
+    <label for="empregador">Selecionar Empregador:</label>
+    <select id="empregador" required>
+        <!-- Options will be dynamically added here -->
+    </select>
+    <br>
+
+    <label for="funcionario">Selecionar Funcionário:</label>
+    <select id="funcionario" required>
+        <option value="">Selecione um empregador primeiro...</option>
+    </select>
+    <br>
+
+    <button onclick="visualizarFolhaPagamento()">Visualizar Folha de Pagamento</button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const empregadorSelect = document.getElementById("empregador");
+            fetch("/juridica/empregador")
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(empregador => {
+                        const option = document.createElement("option");
+                        option.value = empregador.id;
+                        option.text = empregador.nomeEmpresa;
+                        empregadorSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar empregadores:", error);
+                });
+        });
+
+        document.getElementById('empregador').addEventListener('change', function (event) {
+            const empregadorId = event.target.value;
+            const funcionarioSelect = document.getElementById("funcionario");
+            funcionarioSelect.innerHTML = '<option value="">Selecione...</option>';
+
+            if (empregadorId) {
+                fetch(`/selecao/funcionariosPorEmpregador/${empregadorId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const funcionarioSelect = document.getElementById("funcionario");
+                        data.forEach(funcionario => {
+                            const option = document.createElement("option");
+                            option.value = funcionario.id;
+                            option.text = funcionario.nomeCompleto;
+                            funcionarioSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Erro ao buscar funcionários:", error);
+                    });
+            }
+        });
+
+        function visualizarFolhaPagamento() {
+            const empregadorId = document.getElementById('empregador').value;
+            const funcionarioId = document.getElementById('funcionario').value;
+
+            if (!empregadorId || !funcionarioId) {
+                alert("Por favor, selecione um empregador e um funcionário.");
+                return;
+            }
+
+            // Redirecionar para a página de visualização da folha de pagamento com os IDs do empregador e do funcionário
+            window.location.href = `/folhaPagamento.html?empregadorId=${empregadorId}&funcionarioId=${funcionarioId}`;
+        }
+    </script>
+</body>
+
+</html>

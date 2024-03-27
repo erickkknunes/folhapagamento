@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Funcionários</title>
+</head>
+
+<body>
+    <h1>Cadastrar Funcionário</h1>
+    <form id="cadastroForm">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" required><br>
+
+        <label for="cpf">CPF:</label>
+        <input type="text" id="cpf" required><br>
+
+        <label for="dataAdmissao">Data de Admissão:</label>
+        <input type="date" id="dataAdmissao" name="dataAdmissao" required><br>
+
+        <label for="cargo">Cargo:</label>
+        <input type="text" id="cargo" required><br>
+
+        <label for="salario">Salário:</label>
+        <input type="number" id="salario" required><br>
+
+        <label for="dependentes">Dependentes:</label>
+        <input type="number" id="dependentes" required><br>
+
+        <label for="sexo">Sexo:</label>
+        <input type="text" id="sexo" required><br>
+
+        <label for="empregador">Empregador:</label>
+        <select id="empregador" required>
+            <!-- Options will be dynamically added here -->
+        </select><br>
+
+        <button type="submit">Cadastrar</button>
+    </form>
+
+    <h1>Obter Funcionário</h1>
+    <label for="funcionarioId">ID do Funcionário:</label>
+    <input type="number" id="funcionarioId">
+    <button onclick="obterFuncionario()">Obter Funcionário</button>
+
+    <div id="funcionarioInfo"></div>
+
+    <script>
+        async function cadastrarFuncionario(event) {
+            event.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const cpf = document.getElementById('cpf').value;
+            const admissao = document.getElementById('dataAdmissao').value;
+            const cargo = document.getElementById('cargo').value;
+            const salario = parseFloat(document.getElementById('salario').value);
+            const dependentes = parseInt(document.getElementById('dependentes').value);
+            const sexo = document.getElementById('sexo').value;
+            const empregadorId = parseInt(document.getElementById('empregador').value);
+
+            const funcionario = {
+                nomeCompleto: nome,
+                cpf: cpf,
+                dataAdmissao: admissao,
+                cargo: cargo,
+                salarioBase: salario,
+                numDependentes: dependentes,
+                sexo: sexo,
+                empregador: { id: empregadorId }
+            };
+
+            const response = await fetch('/funcionario/cadastrar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(funcionario)
+            });
+
+            const data = await response.json();
+            console.log(data);
+        }
+
+        async function obterFuncionario() {
+            const funcionarioId = document.getElementById('funcionarioId').value;
+
+            const response = await fetch(`/funcionario/${funcionarioId}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('funcionarioInfo').innerHTML = JSON.stringify(data, null, 2);
+            } else {
+                document.getElementById('funcionarioInfo').innerHTML = 'Funcionário não encontrado.';
+            }
+        }
+
+        document.getElementById('cadastroForm').addEventListener('submit', cadastrarFuncionario);
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const empregadorSelect = document.getElementById("empregador");
+            fetch("/juridica/empregador")
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(empregador => {
+                        const option = document.createElement("option");
+                        option.value = empregador.id; // Alterado para pegar o ID do empregador
+                        option.text = empregador.nomeEmpresa;
+                        empregadorSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar empregadores:", error);
+                });
+        });
+    </script>
+</body>
+
+</html>

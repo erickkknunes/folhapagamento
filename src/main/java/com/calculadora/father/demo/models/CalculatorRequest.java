@@ -1,4 +1,4 @@
-package com.calculadora.entities;
+package com.calculadora.father.demo.models;
 
 public class CalculatorRequest {
     private float firstNumber;

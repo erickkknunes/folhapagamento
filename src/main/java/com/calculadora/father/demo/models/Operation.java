@@ -1,4 +1,4 @@
-package com.calculadora.entities;
+package com.calculadora.father.demo.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Descontos</title>
+    <link rel="stylesheet" href="styles_inforemuneracao.css">
+</head>
+
+<body>
+    <h1>Calculadora de Descontos</h1>
+    <form id="descontosForm">
+        <!-- Campo de seleção do empregador -->
+        <label for="empregador">Empregador:</label>
+        <select id="empregador" name="empregador" required>
+            <option value="">Selecione...</option>
+        </select>
+        <br>
+
+        <!-- Campo de seleção do funcionário -->
+        <label for="funcionario">Funcionário:</label>
+        <select id="funcionario" name="funcionario" required>
+            <option value="">Selecione um empregador primeiro...</option>
+        </select>
+        <br>
+
+        <label for="salarioBase">Salário Base:</label>
+        <input type="number" id="salarioBase" name="salarioBase" required>
+        <br>
+        <label for="optouVT">Optou pelo Vale Transporte:</label>
+        <input type="checkbox" id="optouVT" name="optouVT">
+        <br>
+        <label for="optouCS">Optou pela Contribuição Sindical:</label>
+        <input type="checkbox" id="optouCS" name="optouCS">
+        <br>
+        <label for="diasFaltados">Dias Faltados:</label>
+        <input type="number" id="diasFaltados" name="diasFaltados" required>
+        <br>
+        <!-- Novo campo para data da folha de pagamento -->
+        <label for="dataFolhaPagamento">Data da Folha de Pagamento:</label>
+        <input type="date" id="dataFolhaPagamento" name="dataFolhaPagamento" required>
+        <br>
+        <button type="submit">Calcular Descontos</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Preencher a lista de empregadores
+            fetch("/juridica/empregador")
+                .then(response => response.json())
+                .then(data => {
+                    const empregadorSelect = document.getElementById("empregador");
+                    data.forEach(empregador => {
+                        const option = document.createElement("option");
+                        option.value = empregador.id;
+                        option.text = empregador.nomeEmpresa;
+                        empregadorSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar empregadores:", error);
+                });
+        });
+
+        document.getElementById('empregador').addEventListener('change', function (event) {
+            const empregadorId = event.target.value;
+            // Limpar opções anteriores do campo de funcionário
+            const funcionarioSelect = document.getElementById("funcionario");
+            funcionarioSelect.innerHTML = '<option value="">Selecione...</option>';
+
+            // Preencher a lista de funcionários do empregador selecionado
+            fetch(`/juridica/empregador/${empregadorId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const funcionarioSelect = document.getElementById("funcionario");
+                    data.forEach(funcionario => {
+                        const option = document.createElement("option");
+                        option.value = funcionario.id;
+                        option.text = funcionario.nomeCompleto;
+                        funcionarioSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar funcionários:", error);
+                });
+        });
+
+        document.getElementById('descontosForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const requestBody = {
+                empregadorId: parseInt(formData.get('empregador')),
+                funcionarioId: parseInt(formData.get('funcionario')),
+                salarioBase: parseFloat(formData.get('salarioBase')),
+                optouVT: formData.get('optouVT') === 'on',
+                optouCS: formData.get('optouCS') === 'on',
+                diasFaltados: parseInt(formData.get('diasFaltados')),
+                // Inclua o novo campo de data da folha de pagamento
+                dataFolhaPagamento: formData.get('dataFolhaPagamento')
+            };
+            fetch('/descontos/calcdesc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    document.getElementById('result').innerText = 'Descontos calculados com sucesso.';
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    document.getElementById('result').innerText = 'Erro ao calcular descontos.';
+                });
+        });
+    </script>
+</body>
+
+</html>
