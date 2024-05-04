@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Selecionar Empregador e Funcionário</title>
+    <link rel="stylesheet" href="estilogeral.css">
 </head>
 
 <body>
@@ -12,7 +13,6 @@
 
     <label for="empregador">Selecionar Empregador:</label>
     <select id="empregador" required>
-        <!-- Options will be dynamically added here -->
     </select>
     <br>
 
@@ -74,7 +74,6 @@
                 return;
             }
 
-            // Redirecionar para a página de visualização da folha de pagamento com os IDs do empregador e do funcionário
             window.location.href = `/folhaPagamento.html?empregadorId=${empregadorId}&funcionarioId=${funcionarioId}`;
         }
     </script>

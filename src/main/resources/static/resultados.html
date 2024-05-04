@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Descontos</title>
+    <link rel="stylesheet" href="estilogeral.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+</head>
+
+
+<body>
+    <h1>Calculadora de Descontos</h1>
+    <form id="descontosForm">
+        <label for="empregador">Empregador:</label>
+        <select id="empregador" name="empregador" required>
+            <option value="">Selecione...</option>
+        </select>
+        <br>
+        <label for="funcionario">Funcionário:</label>
+        <select id="funcionario" name="funcionario" required>
+            <option value="">Selecione um empregador primeiro...</option>
+        </select>
+        <button type="submit">Ver Holerite</button>
+    </form>
+    <div id="result"></div>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const empregadorSelect = document.getElementById("empregador");
+            const funcionarioSelect = document.getElementById("funcionario");
+            const form = document.getElementById('descontosForm');
+
+
+            // Função para buscar os empregadores e preencher o dropdown
+            fetch("/juridica/empregador")
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(empregador => {
+                        const option = document.createElement("option");
+                        option.value = empregador.id;
+                        option.text = empregador.nomeEmpresa;
+                        empregadorSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar empregadores:", error);
+                    empregadorSelect.innerHTML = '<option value="">Falha ao carregar empregadores</option>';
+                });
+
+
+            // Event listener para quando o empregador é selecionado
+            empregadorSelect.addEventListener('change', function (event) {
+                const empregadorId = event.target.value;
+                funcionarioSelect.innerHTML = '<option value="">Selecione...</option>';
+                if (empregadorId) {
+                    fetch(`/selecao/funcionariosPorEmpregador/${empregadorId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(funcionario => {
+                                const option = document.createElement("option");
+                                option.value = funcionario.id;
+                                option.text = funcionario.nomeCompleto;
+                                funcionarioSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => {
+                            console.error("Erro ao buscar funcionários:", error);
+                            funcionarioSelect.innerHTML = '<option value="">Falha ao carregar funcionários</option>';
+                        });
+                }
+            });
+
+
+            // Event listener para quando o formulário é submetido
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const funcionarioId = formData.get('funcionario');
+
+
+                fetch(`/remuneracao/${funcionarioId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error('Erro ao gerar holerite');
+                    })
+                    .then(data => {
+                        exibirRemuneracao(data);
+                    })
+                    .catch(error => {
+                        console.error('Erro ao gerar holerite:', error);
+                        document.getElementById('result').innerText = 'Erro ao gerar holerite.';
+                    });
+            });
+
+
+            // Função para exibir a remuneração na página
+            function exibirRemuneracao(data) {
+                const resultDiv = document.getElementById('result');
+                if (data && data.funcionario && data.beneficios && data.descontos) {
+                    const salarioTotal = calcularSalarioTotal(data.funcionario.salarioBase, data.beneficios, data.descontos);
+                    let salarioFamiliaText = '';
+
+
+                    if (data.beneficios.salarioFamilia !== undefined) {
+                        if (data.beneficios.salarioFamilia > 0) {
+                            salarioFamiliaText = `<li>Salário Família: R$ ${data.beneficios.salarioFamilia.toFixed(2)}</li>`;
+                        } else {
+                            salarioFamiliaText = `<li>Não tem direito a Salário Família</li>`;
+                        }
+                    }
+
+
+                    let auxilioBabaText = '';
+                    if (data.beneficios.auxilioBaba !== undefined && data.beneficios.auxilioBaba > 0) {
+                        auxilioBabaText = `<li>Auxílio Babá: ${data.beneficios.auxilioBaba.toFixed(2)}</li>`;
+                    }
+
+
+                    resultDiv.innerHTML = `
+                        <h2>HOLERITE DE ${data.funcionario.nomeCompleto}</h2>
+                        <p><strong>Salário Base:</strong> R$ ${data.funcionario.salarioBase.toFixed(2)}</p>
+                        <p><strong>Benefícios:</strong></p>
+                        <ul>
+                            <li>Valor Horas Extras: R$ ${data.beneficios.horasExtras.toFixed(2)}</li>
+                            <li>Valor Horas Extras em Feriados/Domingos: R$ ${data.beneficios.horasExtrasFeriadoDomingo.toFixed(2)}</li>
+                            <li>Valor Adicional de Periculosidade: R$ ${data.beneficios.adicionalPericulosidade.toFixed(2)}</li>
+                            <li>Valor Adicional de Insalubridade: R$ ${data.beneficios.adicionalInsalubridade.toFixed(2)}</li>
+                            ${salarioFamiliaText}
+                            <li>Valor Adicional de Insalubridade: R$ ${data.beneficios.adicionalInsalubridade.toFixed(2)}</li>
+                            ${auxilioBabaText}
+                        </ul>
+                        <p><strong>Descontos:</strong></p>
+                        <ul>
+                            <li>FGTS: R$ ${data.descontos.fgts.toFixed(2)}</li>
+                            <li>Vale Transporte: R$ ${data.descontos.valeTransporte.toFixed(2)}</li>
+                            <li>Vale Alimentação: R$ ${data.descontos.valeAlimentacao.toFixed(2)}</li>
+                            <li>Contribuição Sindical: R$ ${data.descontos.contribuicaoSindical.toFixed(2)}</li>
+                            <li>Faltas/Atrasos: R$ ${data.descontos.faltasAtrasos.toFixed(2)}</li>
+                            <li>IRRF: R$ ${data.descontos.irrf.toFixed(2)}</li>
+                            <li>INSS: R$ ${data.descontos.inss.toFixed(2)}</li>
+                        </ul>
+                        <p><strong>Salário Total:</strong> R$ ${salarioTotal.toFixed(2)}</p>
+                    `;
+
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    doc.html(resultDiv.innerHTML, {
+                        callback: function (doc) {
+                            doc.save('holerite.pdf');
+                        },
+                        x: 10,
+                        y: 10
+                    });
+                } else {
+                    resultDiv.innerHTML = '<p>Falha ao exibir remuneração</p>';
+                }
+            }
+
+
+            // Função para calcular o salário total
+            function calcularSalarioTotal(salarioBase, beneficios, descontos) {
+                return salarioBase + beneficios.horasExtras + beneficios.horasExtrasFeriadoDomingo - descontos.fgts - descontos.valeTransporte - descontos.valeAlimentacao - descontos.contribuicaoSindical - descontos.faltasAtrasos - descontos.irrf;
+            }
+        });
+    </script>
+</body>
+
+
+</html>

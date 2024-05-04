@@ -5,28 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Descontos</title>
-    <link rel="stylesheet" href="styles_inforemuneracao.css">
+    <link rel="stylesheet" href="estilogeral.css">
 </head>
 
 <body>
     <h1>Calculadora de Descontos</h1>
     <form id="descontosForm">
-        <!-- Campo de seleção do empregador -->
         <label for="empregador">Empregador:</label>
         <select id="empregador" name="empregador" required>
             <option value="">Selecione...</option>
         </select>
         <br>
-
-        <!-- Campo de seleção do funcionário -->
         <label for="funcionario">Funcionário:</label>
         <select id="funcionario" name="funcionario" required>
             <option value="">Selecione um empregador primeiro...</option>
         </select>
         <br>
-
-        <label for="salarioBase">Salário Base:</label>
-        <input type="number" id="salarioBase" name="salarioBase" required>
+        <label for="aceitaVA">Aceita Vale Alimentação:</label>
+        <input type="checkbox" id="aceitaVA" name="aceitaVA">
         <br>
         <label for="optouVT">Optou pelo Vale Transporte:</label>
         <input type="checkbox" id="optouVT" name="optouVT">
@@ -34,24 +30,43 @@
         <label for="optouCS">Optou pela Contribuição Sindical:</label>
         <input type="checkbox" id="optouCS" name="optouCS">
         <br>
+        <label for="optouAP">Adicional de Periculosidade:</label>
+        <input type="checkbox" id="optouAP" name="optouAP">
+        <br>
+        <label for="adInsal">Adicional de Insalubridade:</label>
+        <select id="adInsal" name="adInsal" required>
+            <option value="">Selecione...</option>
+            <option value="Mínimo">Mínimo</option>
+            <option value="Médio">Médio</option>
+            <option value="Máximo">Máximo</option>
+        </select>
+        <br>
         <label for="diasFaltados">Dias Faltados:</label>
         <input type="number" id="diasFaltados" name="diasFaltados" required>
         <br>
-        <!-- Novo campo para data da folha de pagamento -->
+        <label for="horasExtras">Horas Extras:</label>
+        <input type="number" id="horasExtras" name="horasExtras" required>
+        <br>
+        <label for="horasExtrasFeriadoDomingo">Horas Extras em Feriados/Domingos:</label>
+        <input type="number" id="horasExtrasFeriadoDomingo" name="horasExtrasFeriadoDomingo" required>
+        <br>
+        <label for="horasExtrasNoturnas">Horas Extras Noturnas:</label>
+        <input type="number" id="horasExtrasNoturnas" name="horasExtrasNoturnas" required>
+        <br>
         <label for="dataFolhaPagamento">Data da Folha de Pagamento:</label>
         <input type="date" id="dataFolhaPagamento" name="dataFolhaPagamento" required>
         <br>
-        <button type="submit">Calcular Descontos</button>
+        <button type="submit">Calcular Descontos e Benefícios</button>
+        <button onclick="window.location.href='/resultados.html'">Ver Holerite</button>
     </form>
     <div id="result"></div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Preencher a lista de empregadores
+            const empregadorSelect = document.getElementById("empregador");
             fetch("/juridica/empregador")
                 .then(response => response.json())
                 .then(data => {
-                    const empregadorSelect = document.getElementById("empregador");
                     data.forEach(empregador => {
                         const option = document.createElement("option");
                         option.value = empregador.id;
@@ -62,60 +77,110 @@
                 .catch(error => {
                     console.error("Erro ao buscar empregadores:", error);
                 });
+
+
+            document.getElementById('empregador').addEventListener('change', function (event) {
+                const empregadorId = event.target.value;
+                const funcionarioSelect = document.getElementById("funcionario");
+                funcionarioSelect.innerHTML = '<option value="">Selecione...</option>';
+
+
+                if (empregadorId) {
+                    fetch(`/selecao/funcionariosPorEmpregador/${empregadorId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const funcionarioSelect = document.getElementById("funcionario");
+                            data.forEach(funcionario => {
+                                const option = document.createElement("option");
+                                option.value = funcionario.nomeCompleto;
+                                option.text = funcionario.nomeCompleto;
+                                funcionarioSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => {
+                            console.error("Erro ao buscar funcionários:", error);
+                        });
+                }
+            });
         });
 
-        document.getElementById('empregador').addEventListener('change', function (event) {
-            const empregadorId = event.target.value;
-            // Limpar opções anteriores do campo de funcionário
-            const funcionarioSelect = document.getElementById("funcionario");
-            funcionarioSelect.innerHTML = '<option value="">Selecione...</option>';
-
-            // Preencher a lista de funcionários do empregador selecionado
-            fetch(`/juridica/empregador/${empregadorId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const funcionarioSelect = document.getElementById("funcionario");
-                    data.forEach(funcionario => {
-                        const option = document.createElement("option");
-                        option.value = funcionario.id;
-                        option.text = funcionario.nomeCompleto;
-                        funcionarioSelect.appendChild(option);
-                    });
-                })
-                .catch(error => {
-                    console.error("Erro ao buscar funcionários:", error);
-                });
-        });
 
         document.getElementById('descontosForm').addEventListener('submit', function (event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-            const requestBody = {
-                empregadorId: parseInt(formData.get('empregador')),
-                funcionarioId: parseInt(formData.get('funcionario')),
-                salarioBase: parseFloat(formData.get('salarioBase')),
-                optouVT: formData.get('optouVT') === 'on',
-                optouCS: formData.get('optouCS') === 'on',
-                diasFaltados: parseInt(formData.get('diasFaltados')),
-                // Inclua o novo campo de data da folha de pagamento
-                dataFolhaPagamento: formData.get('dataFolhaPagamento')
+            const empregadorId = parseInt(formData.get('empregador'));
+            const funcionarioNome = formData.get('funcionario');
+            const optouVT = formData.get('optouVT') === 'on';
+            const optouCS = formData.get('optouCS') === 'on';
+            const diasFaltados = parseInt(formData.get('diasFaltados'));
+            const dataFolhaPagamento = formData.get('dataFolhaPagamento');
+
+            const requestBodyDescontos = {
+                funcionarioNome: funcionarioNome,
+                optouVT: optouVT,
+                optouCS: optouCS,
+                diasFaltados: diasFaltados,
+                dataFolhaPagamento: dataFolhaPagamento
             };
+
             fetch('/descontos/calcdesc', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBodyDescontos)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Erro ao calcular descontos');
+                })
                 .then(data => {
-                    console.log(data);
-                    document.getElementById('result').innerText = 'Descontos calculados com sucesso.';
+                    document.getElementById('result').innerText = 'Descontos calculados e salvos com sucesso.';
                 })
                 .catch(error => {
-                    console.error('Erro:', error);
+                    console.error('Erro ao calcular descontos:', error);
                     document.getElementById('result').innerText = 'Erro ao calcular descontos.';
+                });
+
+            // Enviar dados para calcular benefícios
+            const aceitaVA = formData.get('aceitaVA') === 'on';
+            const horasExtras = parseInt(formData.get('horasExtras'));
+            const horasExtrasFeriadoDomingo = parseInt(formData.get('horasExtrasFeriadoDomingo'));
+            const horasExtrasNoturnas = parseInt(formData.get('horasExtrasNoturnas'));
+            const adInsal = formData.get('adInsal');
+            const optouAP = formData.get('optouAP') === 'on';
+
+            const requestBodyBeneficios = {
+                funcionarioNome: funcionarioNome,
+                aceitaVA: aceitaVA,
+                horasExtras: horasExtras,
+                horasExtrasFeriadoDomingo: horasExtrasFeriadoDomingo,
+                horasExtrasNoturnas: horasExtrasNoturnas,
+                adInsal: adInsal,
+                optouAP: optouAP
+            };
+
+            fetch('/beneficios/calcular', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBodyBeneficios)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Erro ao calcular benefícios');
+                })
+                .then(data => {
+                    console.log('Benefícios calculados e salvos com sucesso:', data);
+                })
+                .catch(error => {
+                    console.error('Erro ao calcular benefícios:', error);
                 });
         });
     </script>

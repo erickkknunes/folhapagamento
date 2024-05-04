@@ -9,10 +9,12 @@ public class Funcionario {
     private Long id;
     private String nomeCompleto;
     private String cpf;
+    private String dataNascimento;
     private String dataAdmissao;
     private String cargo;
     private double salarioBase;
     private int numDependentes;
+    private int numDependentesSix;
     private String sexo;
 
     @ManyToOne
@@ -32,6 +34,10 @@ public class Funcionario {
         return cpf;
     }
 
+    public String getDataNascimento() {
+        return dataNascimento;
+    }
+
     public String getDataAdmissao() {
         return dataAdmissao;
     }
@@ -46,6 +52,10 @@ public class Funcionario {
 
     public int getNumDependentes() {
         return numDependentes;
+    }
+
+    public int getNumDependentesSix() {
+        return numDependentesSix;
     }
 
     public String getSexo() {
@@ -69,6 +79,10 @@ public class Funcionario {
         this.cpf = cpf;
     }
 
+    public void setDataNacimento(String dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
     public void setDataAdmissao(String dataAdmissao) {
         this.dataAdmissao = dataAdmissao;
     }
@@ -83,6 +97,10 @@ public class Funcionario {
 
     public void setNumDependentes(int numDependentes) {
         this.numDependentes = numDependentes;
+    }
+
+    public void setNumDependentesSix(int numDependentesSix) {
+        this.numDependentesSix = numDependentesSix;
     }
 
     public void setSexo(String sexo) {
